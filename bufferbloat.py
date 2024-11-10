@@ -16,6 +16,7 @@ from monitor import monitor_qlen
 import sys
 import os
 import math
+import statistics
 
 parser = ArgumentParser(description="Bufferbloat tests")
 parser.add_argument('--bw-host', '-B',
@@ -130,11 +131,22 @@ def bufferbloat():
     first_host.cmd('ping -i 0.1 -c 100 {} > ping_output.txt &'.format(second_host.IP()))
     first_host.cmd('python3 -m http.server 80 &')
 
+    download_times = []
+
     for _ in range(3):
-        second_host.cmd('curl -o /dev/null -s -w %%{time_total} http://{}:80/index.html >> download_times.txt'.format(first_host.IP()))
-        second_host.cmd('sleep 1')
+        result = second_host.cmd('curl -o /dev/null -s -w %%{time_total} http://{}:80/index.html >> download_times.txt'.format(first_host.IP()))
+        print(result)
+
+        download_time = float(result.strip()) 
+        download_times.append(download_time)
+        second_host.cmd('sleep 5')
     
 
+    avg_time = statistics.mean(download_times)
+    std_dev = statistics.stdev(download_times) if len(download_times) > 1 else 0
+
+    print("Average download time: {}s".format(avg_time))
+    print("Standard deviation: {}".format(std_dev))
     # TODO: Start monitoring the queue sizes.  Since the switch I
     # created is "s0", I monitor one of the interfaces.  Which
     # interface?  The interface numbering starts with 1 and increases.
