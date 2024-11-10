@@ -131,7 +131,7 @@ def bufferbloat():
     first_host.cmd('python3 -m http.server 80 &')
     
     for _ in range(3):
-        second_host.cmd(f'curl -o /dev/null -s -w "%{{time_total}}" http://{first_host.IP()}:80/index.html >> download_times')
+        second_host.cmd(f'curl -o /dev/null -s -w "%{{time_total}}\\n" http://{first_host.IP()}:80/index.html >> download_times')
         sleep(5)
 
     # TODO: Start monitoring the queue sizes.  Since the switch I
