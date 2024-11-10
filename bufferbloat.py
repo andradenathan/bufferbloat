@@ -132,9 +132,9 @@ def bufferbloat():
     first_host.cmd('python3 -m http.server 80 &')
 
     download_times = []
-
+    
     for _ in range(3):
-        result = second_host.cmd('curl -o /dev/null -s -w "%%{{time_total}}" http://{}:80/index.html'.format(first_host.IP()))
+        result = second_host.cmd('curl -o /dev/null -s -w "%{time_total}" http://{}:80/index.html'.format(first_host.IP()))
         print("resultado do download: ", result)
 
         # download_time = float(result.strip()) 
