@@ -127,26 +127,26 @@ def bufferbloat():
     first_host = net.get('h1')
     second_host = net.get('h2')
     second_host.cmd('iperf3 -s &')
-    first_host.cmd('iperf3 -c {} -t 1000 &'.format(second_host.IP()))
-    first_host.cmd('ping -i 0.1 -c 100 {} > ping_output.txt &'.format(second_host.IP()))
+    first_host.cmd(f'iperf3 -c {second_host.IP()} -t 1000 &')
+    first_host.cmd(f'ping -i 0.1 -c 100 {second_host.IP()} > ping_output.txt &')
     first_host.cmd('python3 -m http.server 80 &')
 
     download_times = []
     
     for _ in range(3):
         result = second_host.cmd(f'curl -o /dev/null -s -w "%{{time_total}}" http://{first_host.IP()}:80/index.html')
-        print("resultado do download: ", result)
 
-        # download_time = float(result.strip()) 
-        # download_times.append(download_time)
-        # second_host.cmd('sleep 5')
+        download_time = float(result.strip()) 
+        download_times.append(download_time)
+        second_host.cmd('sleep 5')
     
 
-    # avg_time = statistics.mean(download_times)
-    # std_dev = statistics.stdev(download_times) if len(download_times) > 1 else 0
+    avg_time = statistics.mean(download_times)
+    std_dev = statistics.stdev(download_times) if len(download_times) > 1 else 0
 
-    # print("Average download time: {}s".format(avg_time))
-    # print("Standard deviation: {}".format(std_dev))
+    print("Average download time: {}s".format(avg_time))
+    print("Standard deviation: {}".format(std_dev))
+
     # TODO: Start monitoring the queue sizes.  Since the switch I
     # created is "s0", I monitor one of the interfaces.  Which
     # interface?  The interface numbering starts with 1 and increases.
