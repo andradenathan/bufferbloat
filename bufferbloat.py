@@ -126,8 +126,8 @@ def bufferbloat():
     first_host = net.get('h1')
     second_host = net.get('h2')
     second_host.cmd('iperf -s &')
-    first_host.cmd(f'iperf -s -c {second_host.IP()} -t 1000')
-    first_host.cmd(f'ping -i 0.1 -c 100 {second_host.IP()} > /dev/null 2>&1 &')
+    first_host.cmd(f'iperf -c {second_host.IP()} -t 1000 &')
+    first_host.cmd(f'ping -i 0.1 -c 100 {second_host.IP()} &')
     first_host.cmd('python3 -m http.server 80 &')
     
     for _ in range(3):
