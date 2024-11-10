@@ -135,11 +135,11 @@ def bufferbloat():
 
     for _ in range(3):
         result = second_host.cmd('curl -o /dev/null -s -w "%%{{time_total}}" http://{}:80/index.html >> download_times.txt'.format(first_host.IP()))
-        print(result)
+        print("resultado do download: ", result)
 
-        download_time = float(result.strip()) 
-        download_times.append(download_time)
-        second_host.cmd('sleep 5')
+        # download_time = float(result.strip()) 
+        # download_times.append(download_time)
+        # second_host.cmd('sleep 5')
     
 
     avg_time = statistics.mean(download_times)
