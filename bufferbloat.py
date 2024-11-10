@@ -135,17 +135,18 @@ def bufferbloat():
     
     for _ in range(3):
         result = second_host.cmd(f'curl -o /dev/null -s -w "%{{time_total}}" http://{first_host.IP()}:80/index.html')
-
-        download_time = float(result.strip()) 
-        download_times.append(download_time)
-        second_host.cmd('sleep 5')
+        print("resultado:", result)
+        
+    #     download_time = float(result.strip()) 
+    #     download_times.append(download_time)
+    #     second_host.cmd('sleep 5')
     
 
-    avg_time = statistics.mean(download_times)
-    std_dev = statistics.stdev(download_times) if len(download_times) > 1 else 0
+    # avg_time = statistics.mean(download_times)
+    # std_dev = statistics.stdev(download_times) if len(download_times) > 1 else 0
 
-    print("Average download time: {}s".format(avg_time))
-    print("Standard deviation: {}".format(std_dev))
+    # print("Average download time: {}s".format(avg_time))
+    # print("Standard deviation: {}".format(std_dev))
 
     # TODO: Start monitoring the queue sizes.  Since the switch I
     # created is "s0", I monitor one of the interfaces.  Which
