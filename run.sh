@@ -11,7 +11,7 @@ delay=10
 
 iperf_port=5001
 
-for qsize in 20 120; do
+for qsize in 20 100; do
     dir=bb-q$qsize
 
     python3 bufferbloat.py --bw-net $bwnet --delay $delay --dir $dir
