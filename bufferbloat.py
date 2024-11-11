@@ -5,6 +5,7 @@ from mininet.net import Mininet
 from mininet.log import lg, info
 from mininet.util import dumpNodeConnections
 from mininet.cli import CLI
+from mininet.clean import cleanup
 
 from subprocess import Popen, PIPE
 from time import sleep, time
@@ -78,15 +79,10 @@ class BBTopo(Topo):
 def start_iperf(net):
     h1 = net.get('h1')
     h2 = net.get('h2')
-    print("Starting iperf server...")
-    # For those who are curious about the -w 16m parameter, it ensures
-    # that the TCP flow is not receiver window limited.  If it is,
-    # there is a chance that the router buffer may not get filled up.
-    server = h2.popen("iperf -s -w 16m")
-
-    # TODO: Start the iperf client on h1.  Ensure that you create a
-    # long lived TCP flow.
-    # client = ... 
+    h2.cmd('iperf -s &')
+    h1.cmd(f'iperf -c {h2.IP()} -t 1000 &')
+    h1.cmd(f'ping -i 0.1 -c 100 {h2.IP()} & >> ping_output')
+    h1.cmd('python3 -m http.server 80 &')
 
 def start_qmon(iface, interval_sec=0.1, outfile="q.txt"):
     monitor = Process(target=monitor_qlen,
@@ -95,14 +91,10 @@ def start_qmon(iface, interval_sec=0.1, outfile="q.txt"):
     return monitor
 
 def start_ping(net):
-    # TODO: Start a ping train from h1 to h2 (or h2 to h1, does it
-    # matter?)  Measure RTTs every 0.1 second.  Read the ping man page
-    # to see how to do this.
-
-    # Hint: Use host.popen(cmd, shell=True).  If you pass shell=True
-    # to popen, you can redirect cmd's output using shell syntax.
-    # i.e. ping ... > /path/to/ping.
-    pass
+    h1 = net.get('h1')
+    h2 = net.get('h2')
+    ping_cmd = f"ping -i 0.1 -c {args.time * 10} {h2.IP()} > {args.dir}/ping.txt"
+    h1.popen(ping_cmd, shell=True)
 
 def start_webserver(net):
     h1 = net.get('h1')
@@ -114,50 +106,23 @@ def bufferbloat():
     if not os.path.exists(args.dir):
         os.makedirs(args.dir)
     os.system("sysctl -w net.ipv4.tcp_congestion_control=%s" % args.cong)
+
+    cleanup()
+    
     topo = BBTopo()
     net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink)
     net.start()
-    # This dumps the topology and how nodes are interconnected through
-    # links.
+
     dumpNodeConnections(net.hosts)
-    # This performs a basic all pairs ping test.
     net.pingAll()
 
-    first_host = net.get('h1')
-    second_host = net.get('h2')
-    second_host.cmd('iperf -s &')
-    first_host.cmd(f'iperf -c {second_host.IP()} -t 1000 &')
-    first_host.cmd(f'ping -i 0.1 -c 100 {second_host.IP()} &')
-    first_host.cmd('python3 -m http.server 80 &')
+    qmon = start_qmon(iface='s0-eth2', outfile='%s/q.txt' % (args.dir))
+    start_iperf(net)
+    start_ping(net)
+    start_webserver(net)
     
-    for _ in range(3):
-        second_host.cmd(f'curl -o /dev/null -s -w "%{{time_total}}\\n" http://{first_host.IP()}:80/index.html >> download_times')
-        sleep(5)
-
-    # TODO: Start monitoring the queue sizes.  Since the switch I
-    # created is "s0", I monitor one of the interfaces.  Which
-    # interface?  The interface numbering starts with 1 and increases.
-    # Depending on the order you add links to your network, this
-    # number may be 1 or 2.  Ensure you use the correct number.
-    qmon = start_qmon(iface='s0-eth2',
-                      outfile='%s/q.txt' % (args.dir))
-
-    # TODO: Start iperf, webservers, etc.
-    # start_iperf(net)
-
-    # TODO: measure the time it takes to complete webpage transfer
-    # from h1 to h2 (say) 3 times.  Hint: check what the following
-    # command does: curl -o /dev/null -s -w %{time_total} google.com
-    # Now use the curl command to fetch webpage from the webserver you
-    # spawned on host h1 (not from google!)
-    # Hint: Verify the url by running your curl command without the
-    # flags. The html webpage should be returned as the response.
-
-    # Hint: have a separate function to do this and you may find the
-    # loop below useful.
     start_time = time()
     while True:
-        # do the measurement (say) 3 times.
         sleep(5)
         now = time()
         delta = now - start_time
@@ -165,17 +130,18 @@ def bufferbloat():
             break
         print("%.1fs left..." % (args.time - delta))
 
-    # TODO: compute average (and standard deviation) of the fetch
-    # times.  You don't need to plot them.  Just note it in your
-    # README and explain.
+        h1 = net.get('h1')
+        h2 = net.get('h2')
+        for _ in range(3):
+            h2.cmd(f'curl -o /dev/null -s -w "%{{time_total}}\\n" http://{h1.IP()}:80/index.html >> download_times')
+            sleep(5)
 
-    # Hint: The command below invokes a CLI which you can use to
-    # debug.  It allows you to run arbitrary commands inside your
-    # emulated hosts h1 and h2.
     CLI(net)
 
-    qmon.terminate()
+    if qmon is not None:
+        qmon.terminate()
     net.stop()
+    
     # Ensure that all processes you create within Mininet are killed.
     # Sometimes they require manual killing.
     Popen("pgrep -f webserver.py | xargs kill -9", shell=True).wait()

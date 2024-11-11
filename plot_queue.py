@@ -66,7 +66,7 @@ for i, f in enumerate(args.files):
 
     xaxis = xaxis[::args.every]
     qlens = qlens[::args.every]
-    ax.plot(xaxis, qlens, label=args.legend[i], lw=2, **get_style(i))
+    ax.plot(xaxis, qlens, label=args.legend[i], **get_style(i))
     ax.xaxis.set_major_locator(MaxNLocator(4))
 
 plt.ylabel("Packets")
