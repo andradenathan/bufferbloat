@@ -162,7 +162,9 @@ def test_quic_server():
 
     qmon = start_qmon(iface='s0-eth2', outfile='%s/q.txt' % (args.dir))
     
-
+    h1 = net.get('h1')
+    h2 = net.get('h2')
+    
     h1.cmd('python3 ../quic/server.py &')
     print(h2.cmd('python3 ../quic/client.py'))
 
