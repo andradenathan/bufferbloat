@@ -146,5 +146,33 @@ def bufferbloat():
     # Sometimes they require manual killing.
     Popen("pgrep -f webserver.py | xargs kill -9", shell=True).wait()
 
+def test_quic_server():
+    if not os.path.exists(args.dir):
+        os.makedirs(args.dir)
+    os.system("sysctl -w net.ipv4.tcp_congestion_control=%s" % args.cong)
+
+    cleanup()
+    
+    topo = BBTopo()
+    net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink)
+    net.start()
+
+    dumpNodeConnections(net.hosts)
+    net.pingAll()
+
+    qmon = start_qmon(iface='s0-eth2', outfile='%s/q.txt' % (args.dir))
+    
+
+    h1.cmd('python3 server.py &')
+    print(h2.cmd('python3 client.py'))
+
+    CLI(net)
+
+    if qmon is not None:
+        qmon.terminate()
+
+    net.stop()
+
 if __name__ == "__main__":
-    bufferbloat()
+    # bufferbloat()
+    test_quic_server()
