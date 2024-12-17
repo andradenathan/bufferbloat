@@ -189,7 +189,7 @@ def quic_bufferbloat():
         print("%.1fs left..." % (args.time - delta))
 
         for _ in range(3):
-            h2.cmd(f'cd ../quiche/apps/src/bin && cargo run --bin client -- https://{h1.IP()}:4433/index.html >> quic_download_times')
+            h2.cmd(f'cd ../quiche/apps/src/bin && cargo run --bin client -- http://{h1.IP()}:4433/index.html >> quic_download_times')
             sleep(5)
 
     CLI(net)
