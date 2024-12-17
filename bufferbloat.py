@@ -70,7 +70,7 @@ class BBTopo(Topo):
 
         # 1 Gbps link
         self.addLink(first_host, switch, bw=1000, delay='10ms')
-        self.addLink(switch, second_host, bw=1.5, delay='10ms', max_queue_size=20)
+        self.addLink(switch, second_host, bw=1.5, delay='10ms')
 
 # Simple wrappers around monitoring utilities.  You are welcome to
 # contribute neatly written (using classes) monitoring scripts for
