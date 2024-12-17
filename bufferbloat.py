@@ -146,7 +146,7 @@ def bufferbloat():
     # Sometimes they require manual killing.
     Popen("pgrep -f webserver.py | xargs kill -9", shell=True).wait()
 
-def test_quic_server():
+def quic_bufferbloat():
     if not os.path.exists(args.dir):
         os.makedirs(args.dir)
     os.system("sysctl -w net.ipv4.tcp_congestion_control=%s" % args.cong)
@@ -165,8 +165,22 @@ def test_quic_server():
     h1 = net.get('h1')
     h2 = net.get('h2')
     
-    h1.cmd('python3 ../quic/server.py &')
-    print(h2.cmd('python3 ../quic/client.py'))
+    info("** Starting QUIC server on h1 **\n")
+    h1.cmd('cd ../quiche/apps/src/bin && cargo run --bin server &')
+
+    info("** Starting QUIC client on h2 **\n")
+    start_time = time()
+    while True:
+        sleep(5)
+        now = time()
+        delta = now - start_time
+        if delta > args.time:
+            break
+        print("%.1fs left..." % (args.time - delta))
+
+        for _ in range(3):
+            h2.cmd(f'cd ../quiche/apps/src/bin && cargo run --bin client -- https://{h1.IP()}:4433/index.html >> quic_download_times')
+            sleep(5)
 
     CLI(net)
 
@@ -175,6 +189,8 @@ def test_quic_server():
 
     net.stop()
 
+    Popen("pgrep -f webserver.py | xargs kill -9", shell=True).wait()
+
 if __name__ == "__main__":
     # bufferbloat()
-    test_quic_server()
+    quic_bufferbloat()
