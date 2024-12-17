@@ -1,35 +1,51 @@
-use std::net::UdpSocket;
-use std::time::Instant;
-use quiche::{Config, ConnectionId};
+use std::net::{UdpSocket, SocketAddr};
+use quiche::{self, Config, ConnectionId, RecvInfo};
 
-fn main() -> Result<(), std::io::Error> {
-    let socket = UdpSocket::bind("127.0.0.1:8080")?;
-    println!("Server listening on 127.0.0.1:8080");
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let server_addr: SocketAddr = "127.0.0.1:4433".parse()?;
 
-    let mut config = Config::new(quiche::PROTOCOL_VERSION).unwrap();
-    config.verify_peer(false); 
-    config.load_cert_chain_from_pem_file("cert.crt").unwrap();
-    config.load_priv_key_from_pem_file("cert.key").unwrap();
-    config.set_application_protos(b"\x05hq-29").unwrap();
+    let socket = UdpSocket::bind(&server_addr)?;
+    println!("Server listening on {}", server_addr);
+
+    let mut config = Config::new(quiche::PROTOCOL_VERSION)?;
+    config
+        .set_application_protos(&[b"\x05hq-29", b"\x08http/0.9"])
+        .unwrap();
+    config.set_max_idle_timeout(5000);
+    config.set_max_recv_udp_payload_size(65535);
+    config.set_initial_max_data(10_000_000);
+    config.set_initial_max_stream_data_bidi_local(1_000_000);
+    config.set_initial_max_streams_bidi(100);
+
+    let conn_id = ConnectionId::from_ref(&[0xba; 16]);
 
     let mut buf = [0; 65535];
+    let mut out = [0; 65535];
 
     loop {
         let (len, client_addr) = socket.recv_from(&mut buf)?;
         println!("Received {} bytes from {}", len, client_addr);
 
-        let conn_id = ConnectionId::from_ref(&buf[..len]);
-        let mut conn = quiche::accept(&conn_id, None, &mut config).unwrap();
-        
-        while let Ok(_) = conn.recv(&mut buf) {}
-        
-        let send_buf = b"Hello from QUIC server!";
-        let written = conn.stream_send(0, send_buf, true).unwrap();
+        let mut conn = quiche::accept(
+            &conn_id,
+            None,
+            server_addr,
+            client_addr,
+            &mut config,
+        )?;
 
-        let mut out = [0; 65535];
-        if let Ok(send_len) = conn.send(&mut out) {
-            socket.send_to(&out[..send_len], client_addr)?;
-            println!("Sent {} bytes back to {}", written, client_addr);
+        let recv_info = RecvInfo {
+            from: client_addr,
+            to: server_addr,
+        };
+
+        if let Ok(read) = conn.recv(&mut buf[..len], recv_info) {
+            println!("Processed {} bytes", read);
+        }
+
+        if let Ok((write, _)) = conn.send(&mut out) {
+            socket.send_to(&out[..write], client_addr)?;
+            println!("Sent {} bytes to {}", write, client_addr);
         }
     }
 }
