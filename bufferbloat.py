@@ -177,7 +177,8 @@ def quic_bufferbloat():
     
     info("** Starting QUIC server on h1 **\n")
     h1.cmd('cd ../quiche/apps/src/bin && cargo run --bin server &')
-
+    h2.cmd(f'cd ../quiche/apps/src/bin && cargo run --bin client -- http://{h1.IP()}:4433/index.html &')
+    
     info("** Starting QUIC client on h2 **\n")
     start_time = time()
     while True:
@@ -189,7 +190,6 @@ def quic_bufferbloat():
         print("%.1fs left..." % (args.time - delta))
 
         for _ in range(3):
-            h2.cmd(f'cd ../quiche/apps/src/bin && cargo run --bin client -- http://{h1.IP()}:4433/index.html &')
             h2.cmd(f'curl -o /dev/null -s -w "%{{time_total}}\\n" http://{h1.IP()}:4433/index.html >> quic_download_times')
             sleep(5)
 
