@@ -1,14 +1,16 @@
-import SimpleHTTPServer
-import SocketServer
+import http.server
+import socketserver
+import os
 
-PORT = 80
+PORT = 8080 
 
-class Handler(SimpleHTTPServer.SimpleHTTPRequestHandler):
-    # Disable logging DNS lookups
-    def address_string(self):
-        return str(self.client_address[0])
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
-Handler = Handler
-httpd = SocketServer.TCPServer(("", PORT), Handler)
-print("Server1: httpd serving at port", PORT)
-httpd.serve_forever()
+os.chdir(current_dir)
+
+Handler = http.server.SimpleHTTPRequestHandler
+
+with socketserver.TCPServer(("", PORT), Handler) as httpd:
+    print(f"Servidor rodando na porta {PORT}")
+    print(f"Acesse: http://localhost:{PORT}/index.html")
+    httpd.serve_forever()
