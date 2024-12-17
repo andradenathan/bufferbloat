@@ -82,7 +82,14 @@ def start_iperf(net):
     h2.cmd('iperf -s &')
     h1.cmd(f'iperf -c {h2.IP()} -t 1000 &')
     h1.cmd(f'ping -i 0.1 -c 100 {h2.IP()} & >> ping_output')
-    h1.cmd('python3 -m http.server 80 &')
+
+def start_qperf(net):
+    h1 = net.get('h1')
+    h2 = net.get('h2')
+
+    h1.cmd('qperf &') 
+    h2.cmd(f'qperf {h1.IP()} tcp_bw tcp_lat >> qperf_output &') 
+    h1.cmd(f'ping -i 0.1 -c 100 {h2.IP()} >> ping_output_qperf &')
 
 def start_qmon(iface, interval_sec=0.1, outfile="q.txt"):
     monitor = Process(target=monitor_qlen,
@@ -162,6 +169,9 @@ def quic_bufferbloat():
 
     qmon = start_qmon(iface='s0-eth2', outfile='%s/q.txt' % (args.dir))
     
+    start_qperf(net)
+    start_ping(net)
+
     h1 = net.get('h1')
     h2 = net.get('h2')
     
