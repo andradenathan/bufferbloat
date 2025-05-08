@@ -65,3 +65,18 @@ Estudar e comparar o impacto do bufferbloat em diferentes protocolos de transpor
 
 * [mininet-vagrant](https://github.com/skywardpixel/mininet-vagrant)
 * [aioquic (QUIC implementation)](https://github.com/aiortc/aioquic)
+
+
+
+### Autores
+
+<a href="https://github.com/andradenathan">
+    <img src="https://avatars.githubusercontent.com/u/42661561?v=4" width="150px"/>
+</a>
+<a href="https://github.com/0nerb">
+    <img src="https://avatars.githubusercontent.com/u/126625129?v=4" width="150px" />
+</a>
+<a href="https://github.com/MMuhen">
+    <img src="https://avatars.githubusercontent.com/u/139181000?v=4" width="150px" />
+</a>
+
