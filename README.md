@@ -68,7 +68,7 @@ Estudar e comparar o impacto do bufferbloat em diferentes protocolos de transpor
 
 
 
-### Autores
+## Autores
 
 <a href="https://github.com/andradenathan">
     <img src="https://avatars.githubusercontent.com/u/42661561?v=4" width="150px"/>
